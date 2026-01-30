@@ -11,6 +11,10 @@ import aiohttp
 import re
 from collections import Counter, defaultdict
 
+# Import enhanced modules
+from enhanced_extractor import extract_top_agencies_enhanced
+from gdelt_fetcher import fetch_gdelt_simple
+
 # ============================================================================
 # SIMPLE ENTITY EXTRACTOR (NO AI REQUIRED)
 # ============================================================================
@@ -180,65 +184,93 @@ with col2:
 st.markdown("---")
 
 # ============================================================================
-# BUTTON 1: GET TOP AGENCIES (TRAINED ON MAXIMUM HEADLINES)
+# DEEP ANALYSIS MODE
 # ============================================================================
 
 st.subheader("🏆 Top Agencies/Companies Analysis")
-st.info("📊 Analyzes 100 news headlines to identify top trending agencies and companies")
+st.info("📊 Analyzes 1000+ news articles from multiple global sources for maximum accuracy")
 
-if st.button("🚀 Get Top Agencies List", type="primary", use_container_width=True):
-    with st.spinner(f"🔍 Fetching maximum news headlines for '{query}'..."):
-        # Fetch maximum articles
-        articles = fetch_google_news(query, duration, max_results=100)
+if st.button("🚀 Analyze Top Agencies", type="primary", use_container_width=True):
+    with st.spinner(f"🔍 Fetching news articles for '{query}'..."):
+        # Fetch from multiple sources (multi-source aggregation)
+        articles = fetch_gdelt_simple(query, duration, max_articles=1000)
         st.session_state.articles = articles
         
         if not articles:
             st.error("❌ No news found. Try a different keyword or increase duration.")
             st.session_state.agencies = []
         else:
-            st.success(f"✅ Analyzed {len(articles)} news headlines")
+            st.success(f"✅ Fetched {len(articles)} news articles from multiple global sources")
             
-            # Extract top agencies
+            # Extract top agencies with enhanced extractor
             with st.spinner("🤖 Analyzing entities and ranking agencies..."):
-                agencies = extract_top_agencies(articles, query)
+                agencies = extract_top_agencies_enhanced(articles, query, min_mentions=5)
                 st.session_state.agencies = agencies
-                st.session_state.agencies_query = query  # Store query for display
+                st.session_state.agencies_query = query
+                st.session_state.analysis_mode = "Deep Analysis"
 
 # Display agencies if available (outside button block)
 if st.session_state.agencies:
     st.markdown("### 📋 Top 10 Agencies/Companies")
-    st.markdown(f"*Based on analysis of {len(st.session_state.articles)} news articles about '{st.session_state.get('agencies_query', query)}'*")
     
-    # Display as nice cards
+    # Show analysis mode and article count
+    analysis_mode = st.session_state.get('analysis_mode', 'Standard')
+    st.markdown(f"**Analysis Mode:** {analysis_mode} | **Articles Analyzed:** {len(st.session_state.articles)} | **Keyword:** '{st.session_state.get('agencies_query', query)}'")
+    
+    st.markdown("---")
+    
+    # Display as enhanced cards with confidence and entity type
     for agency in st.session_state.agencies:
         rank = agency['rank']
         name = agency['name']
         mentions = agency['mentions']
         pct = agency['percentage']
+        confidence = agency.get('confidence', 0)
+        entity_type = agency.get('entity_type', 'company')
+        context_diversity = agency.get('context_diversity', 0)
         
-        # Color coding
-        if pct >= 10:
+        # Color coding based on confidence
+        if confidence >= 80:
             badge = "🟢"
-            color = "green"
-        elif pct >= 5:
+            color = "#28a745"
+        elif confidence >= 60:
             badge = "🟡"
-            color = "orange"
+            color = "#ffc107"
         else:
             badge = "🟠"
-            color = "gray"
+            color = "#fd7e14"
         
         # Theme-aware card styling
         if st.session_state.theme == 'light':
-            bg_color = "#f0f2f6"
+            bg_color = "#f8f9fa"
             text_color = "#000000"
+            border_color = color
         else:
-            bg_color = "#262730"
+            bg_color = "#1e1e1e"
             text_color = "#FAFAFA"
+            border_color = color
+        
+        # Entity type emoji
+        type_emoji = {
+            "company": "🏢",
+            "company (acronym)": "🏭",
+            "government_agency": "🏛️",
+            "research_org": "🔬"
+        }.get(entity_type, "🏢")
         
         st.markdown(f"""
-        <div style='padding: 10px; margin: 5px 0; border-left: 4px solid {color}; background-color: {bg_color}; color: {text_color};'>
-            <strong>{badge} {rank}. {name}</strong><br>
-            <small>📰 Mentioned in {mentions} articles ({pct}% of total)</small>
+        <div style='padding: 15px; margin: 8px 0; border-left: 5px solid {border_color}; background-color: {bg_color}; color: {text_color}; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                <div>
+                    <strong style='font-size: 1.1em;'>{badge} {rank}. {name}</strong> {type_emoji}
+                    <br>
+                    <small style='color: {text_color}; opacity: 0.8;'>
+                        📰 {mentions} mentions ({pct}%) • 
+                        🎯 Confidence: {confidence}% • 
+                        📊 Diversity: {context_diversity} sources
+                    </small>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
     
