@@ -12,6 +12,7 @@ from collections import Counter
 
 from enhanced_extractor import extract_top_agencies_enhanced
 from gdelt_fetcher import fetch_gdelt_simple
+from article_scraper import enhance_articles_async
 
 
 async def fetch_google_news_async(query, duration=1, max_results=100):
@@ -204,9 +205,12 @@ if st.button("📡 Get News Headlines", use_container_width=True):
             st.error("❌ No news found. Try a different keyword or increase duration.")
             st.session_state.headlines = []
         else:
-            st.success(f"✅ Found {len(articles)} news articles")
-            st.session_state.headlines = articles
-            st.session_state.headlines_query = query
+            with st.spinner("🔍 Enhancing article content for better insights..."):
+                # Enhance the top 15 articles to show more content (faster this way)
+                articles = asyncio.run(enhance_articles_async(articles, limit=15))
+                st.success(f"✅ Found {len(articles)} news articles")
+                st.session_state.headlines = articles
+                st.session_state.headlines_query = query
 
 if 'headlines' in st.session_state and st.session_state.headlines:
     st.markdown(f"### 📋 {len(st.session_state.headlines)} Headlines about '{st.session_state.get('headlines_query', query)}'")
