@@ -1,19 +1,11 @@
 import os
-import time
-import random
-import json
 import requests
 import feedparser
 from bs4 import BeautifulSoup
-from newspaper import Article, Config
 import streamlit as st
-from huggingface_hub import InferenceClient
 import pandas as pd
 from io import BytesIO
 from docx import Document
-import base64
-import streamlit.components.v1 as components
-from datetime import date, timedelta
 import asyncio
 import aiohttp
 import re
