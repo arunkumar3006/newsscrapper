@@ -121,11 +121,12 @@ if st.button("🚀 Analyze Top Agencies", type="primary", use_container_width=Tr
     sector = search_context['sector_identified']
     
     if sector != "NONE":
-        st.info(f"💡 Smart Search: Expanded '{query}' to '{optimized_query}' for better sector coverage.")
+        # Log internally but don't show to user
+        print(f"Smart Search: Expanded '{query}' to '{optimized_query}'")
     
     with st.spinner(f"🔍 Fetching news articles for '{query}'..."):
         # Use OPTIMIZED query for fetching
-        articles = fetch_gdelt_simple(optimized_query, duration, max_articles=1000)
+        articles = fetch_gdelt_simple(optimized_query, duration, max_articles=2000)
         st.session_state.articles = articles
         
         if not articles:
