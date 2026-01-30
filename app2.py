@@ -224,8 +224,16 @@ if st.button("🚀 Get Top Agencies List", type="primary", use_container_width=T
                         badge = "🟠"
                         color = "gray"
                     
+                    # Theme-aware card styling
+                    if st.session_state.theme == 'light':
+                        bg_color = "#f0f2f6"
+                        text_color = "#000000"
+                    else:
+                        bg_color = "#262730"
+                        text_color = "#FAFAFA"
+                    
                     st.markdown(f"""
-                    <div style='padding: 10px; margin: 5px 0; border-left: 4px solid {color}; background-color: #f0f2f6;'>
+                    <div style='padding: 10px; margin: 5px 0; border-left: 4px solid {color}; background-color: {bg_color}; color: {text_color};'>
                         <strong>{badge} {rank}. {name}</strong><br>
                         <small>📰 Mentioned in {mentions} articles ({pct}% of total)</small>
                     </div>
