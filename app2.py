@@ -194,6 +194,7 @@ if st.button("🚀 Get Top Agencies List", type="primary", use_container_width=T
         
         if not articles:
             st.error("❌ No news found. Try a different keyword or increase duration.")
+            st.session_state.agencies = []
         else:
             st.success(f"✅ Analyzed {len(articles)} news headlines")
             
@@ -201,55 +202,55 @@ if st.button("🚀 Get Top Agencies List", type="primary", use_container_width=T
             with st.spinner("🤖 Analyzing entities and ranking agencies..."):
                 agencies = extract_top_agencies(articles, query)
                 st.session_state.agencies = agencies
-            
-            if agencies:
-                st.markdown("### 📋 Top 10 Agencies/Companies")
-                st.markdown(f"*Based on analysis of {len(articles)} news articles about '{query}'*")
-                
-                # Display as nice cards
-                for agency in agencies:
-                    rank = agency['rank']
-                    name = agency['name']
-                    mentions = agency['mentions']
-                    pct = agency['percentage']
-                    
-                    # Color coding
-                    if pct >= 10:
-                        badge = "🟢"
-                        color = "green"
-                    elif pct >= 5:
-                        badge = "🟡"
-                        color = "orange"
-                    else:
-                        badge = "🟠"
-                        color = "gray"
-                    
-                    # Theme-aware card styling
-                    if st.session_state.theme == 'light':
-                        bg_color = "#f0f2f6"
-                        text_color = "#000000"
-                    else:
-                        bg_color = "#262730"
-                        text_color = "#FAFAFA"
-                    
-                    st.markdown(f"""
-                    <div style='padding: 10px; margin: 5px 0; border-left: 4px solid {color}; background-color: {bg_color}; color: {text_color};'>
-                        <strong>{badge} {rank}. {name}</strong><br>
-                        <small>📰 Mentioned in {mentions} articles ({pct}% of total)</small>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                # Download option
-                df = pd.DataFrame(agencies)
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download Agencies List (CSV)",
-                    data=csv,
-                    file_name=f"top_agencies_{query.replace(' ', '_')}.csv",
-                    mime="text/csv"
-                )
-            else:
-                st.warning("⚠️ No agencies found. Try a different keyword.")
+                st.session_state.agencies_query = query  # Store query for display
+
+# Display agencies if available (outside button block)
+if st.session_state.agencies:
+    st.markdown("### 📋 Top 10 Agencies/Companies")
+    st.markdown(f"*Based on analysis of {len(st.session_state.articles)} news articles about '{st.session_state.get('agencies_query', query)}'*")
+    
+    # Display as nice cards
+    for agency in st.session_state.agencies:
+        rank = agency['rank']
+        name = agency['name']
+        mentions = agency['mentions']
+        pct = agency['percentage']
+        
+        # Color coding
+        if pct >= 10:
+            badge = "🟢"
+            color = "green"
+        elif pct >= 5:
+            badge = "🟡"
+            color = "orange"
+        else:
+            badge = "🟠"
+            color = "gray"
+        
+        # Theme-aware card styling
+        if st.session_state.theme == 'light':
+            bg_color = "#f0f2f6"
+            text_color = "#000000"
+        else:
+            bg_color = "#262730"
+            text_color = "#FAFAFA"
+        
+        st.markdown(f"""
+        <div style='padding: 10px; margin: 5px 0; border-left: 4px solid {color}; background-color: {bg_color}; color: {text_color};'>
+            <strong>{badge} {rank}. {name}</strong><br>
+            <small>📰 Mentioned in {mentions} articles ({pct}% of total)</small>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Download option
+    df = pd.DataFrame(st.session_state.agencies)
+    csv = df.to_csv(index=False)
+    st.download_button(
+        label="📥 Download Agencies List (CSV)",
+        data=csv,
+        file_name=f"top_agencies_{st.session_state.get('agencies_query', query).replace(' ', '_')}.csv",
+        mime="text/csv"
+    )
 
 # ============================================================================
 # BUTTON 2: GET NEWS HEADLINES
@@ -262,48 +263,51 @@ st.info("📋 Get list of latest news headlines for your keyword")
 if st.button("📡 Get News Headlines", use_container_width=True):
     with st.spinner(f"📡 Fetching news headlines for '{query}'..."):
         articles = fetch_google_news(query, duration, max_results=100)
-        st.session_state.articles = articles
         
         if not articles:
             st.error("❌ No news found. Try a different keyword or increase duration.")
+            st.session_state.headlines = []
         else:
             st.success(f"✅ Found {len(articles)} news articles")
-            
-            # Display headlines
-            st.markdown(f"### 📋 {len(articles)} Headlines about '{query}'")
-            
-            for i, article in enumerate(articles, 1):
-                with st.expander(f"📰 {i}. {article['title']}", expanded=(i <= 3)):
-                    st.markdown(f"**Source:** {article['source']}")
-                    st.markdown(f"**Published:** {article['published']}")
-                    st.markdown(f"**Description:** {article['description']}")
-                    st.markdown(f"[🔗 Read full article]({article['link']})")
-            
-            # Download option
-            df = pd.DataFrame(articles)
-            
-            # Excel download
-            buffer = BytesIO()
-            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False, sheet_name='News')
-            buffer.seek(0)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.download_button(
-                    label="📥 Download Headlines (Excel)",
-                    data=buffer,
-                    file_name=f"news_headlines_{query.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.ms-excel"
-                )
-            with col2:
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download Headlines (CSV)",
-                    data=csv,
-                    file_name=f"news_headlines_{query.replace(' ', '_')}.csv",
-                    mime="text/csv"
-                )
+            st.session_state.headlines = articles
+            st.session_state.headlines_query = query  # Store query for display
+
+# Display headlines if available (outside button block)
+if 'headlines' in st.session_state and st.session_state.headlines:
+    st.markdown(f"### 📋 {len(st.session_state.headlines)} Headlines about '{st.session_state.get('headlines_query', query)}'")
+    
+    for i, article in enumerate(st.session_state.headlines, 1):
+        with st.expander(f"📰 {i}. {article['title']}", expanded=(i <= 3)):
+            st.markdown(f"**Source:** {article['source']}")
+            st.markdown(f"**Published:** {article['published']}")
+            st.markdown(f"**Description:** {article['description']}")
+            st.markdown(f"[🔗 Read full article]({article['link']})")
+    
+    # Download option
+    df = pd.DataFrame(st.session_state.headlines)
+    
+    # Excel download
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='News')
+    buffer.seek(0)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button(
+            label="📥 Download Headlines (Excel)",
+            data=buffer,
+            file_name=f"news_headlines_{st.session_state.get('headlines_query', query).replace(' ', '_')}.xlsx",
+            mime="application/vnd.ms-excel"
+        )
+    with col2:
+        csv = df.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Headlines (CSV)",
+            data=csv,
+            file_name=f"news_headlines_{st.session_state.get('headlines_query', query).replace(' ', '_')}.csv",
+            mime="text/csv"
+        )
 
 # ============================================================================
 # FOOTER
