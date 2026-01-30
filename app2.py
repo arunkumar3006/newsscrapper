@@ -104,7 +104,60 @@ def fetch_google_news(query, duration=1, max_results=100):
 # STREAMLIT UI
 # ============================================================================
 
-st.set_page_config(page_title="News Intelligence", layout="wide")
+st.set_page_config(page_title="News Intelligence", layout="wide", initial_sidebar_state="collapsed")
+
+# Custom CSS to hide GitHub menu and style the app
+st.markdown("""
+<style>
+    /* Hide GitHub menu and share button */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Hide the deploy button and other top-right items */
+    .stDeployButton {display: none;}
+    button[kind="header"] {display: none;}
+    
+    /* Style improvements */
+    .stApp {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    /* Theme toggle button styling */
+    .theme-toggle {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 999;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Initialize theme in session state
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'dark'
+
+# Theme toggle button in top right
+col_theme = st.columns([0.9, 0.1])
+with col_theme[1]:
+    if st.button("🌓" if st.session_state.theme == 'dark' else "🌞", help="Toggle theme"):
+        st.session_state.theme = 'light' if st.session_state.theme == 'dark' else 'dark'
+        st.rerun()
+
+# Apply theme-specific CSS
+if st.session_state.theme == 'light':
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+        .stMarkdown, .stText {
+            color: #000000;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Logo and title
 if os.path.exists("Mavericks logo.png"):
