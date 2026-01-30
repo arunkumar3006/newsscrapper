@@ -110,9 +110,22 @@ st.markdown("---")
 st.subheader("🏆 Top Agencies/Companies Analysis")
 st.info("📊 Analyzes 1000+ news articles from multiple global sources for maximum accuracy")
 
+from smart_search import expand_query
+
+
 if st.button("🚀 Analyze Top Agencies", type="primary", use_container_width=True):
+    # SMART SEARCH EXPANSION
+    search_context = expand_query(query)
+    optimized_query = search_context['optimized_query']
+    context_keywords = search_context['context_keywords']
+    sector = search_context['sector_identified']
+    
+    if sector != "NONE":
+        st.info(f"💡 Smart Search: Expanded '{query}' to '{optimized_query}' for better sector coverage.")
+    
     with st.spinner(f"🔍 Fetching news articles for '{query}'..."):
-        articles = fetch_gdelt_simple(query, duration, max_articles=1000)
+        # Use OPTIMIZED query for fetching
+        articles = fetch_gdelt_simple(optimized_query, duration, max_articles=1000)
         st.session_state.articles = articles
         
         if not articles:
@@ -122,7 +135,8 @@ if st.button("🚀 Analyze Top Agencies", type="primary", use_container_width=Tr
             st.success(f"✅ Fetched {len(articles)} news articles from multiple global sources")
             
             with st.spinner("🤖 Analyzing entities and ranking agencies..."):
-                agencies = extract_top_agencies_enhanced(articles, query, min_mentions=5)
+                # Pass CONTEXT KEYWORDS for enhanced extraction
+                agencies = extract_top_agencies_enhanced(articles, query, min_mentions=5, context_keywords=context_keywords)
                 st.session_state.agencies = agencies
                 st.session_state.agencies_query = query
                 st.session_state.analysis_mode = "Deep Analysis"
